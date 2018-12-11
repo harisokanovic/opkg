@@ -55,7 +55,7 @@ fi
 # We don't use a secret keyring, of course, but gpg panics and
 # implodes if there isn't one available
 
-GPG="$GPGCMD --no-options --no-default-keyring --keyring $CFGROOT/trusted.gpg --secret-keyring $CFGROOT/secring.gpg --trustdb-name $CFGROOT/trustdb.gpg"
+GPG="$GPGCMD --no-options --no-default-keyring --keyring $CFGROOT/pubring.kbx --secret-keyring $CFGROOT/secring.gpg --trustdb-name $CFGROOT/trustdb.gpg"
 
 case "$command" in
     add)

@@ -25,6 +25,7 @@
 #include "opkg_message.h"
 #include "opkg_gpg.h"
 #include "sprintf_alloc.h"
+#include "file_util.h"
 
 static int gpgme_init()
 {
@@ -175,10 +176,29 @@ int opkg_verify_gpg_signature(const char *file, const char *sigfile)
     gpgme_get_engine_info(&info);
     gpgme_ctx_set_engine_info(ctx, info->protocol, info->file_name, info->home_dir);
 
-    sprintf_alloc(&trusted_path, "%s/%s", opkg_config->gpg_dir, "trusted.gpg");
+    /* First try standard filename */
+    sprintf_alloc(&trusted_path, "%s/%s", opkg_config->gpg_dir, "pubring.kbx");
     if (!trusted_path) {
         opkg_msg(ERROR, "Out of memory!\n");
         goto out_err;
+    }
+
+    if (!file_exists(trusted_path)) {
+        free(trusted_path);
+        trusted_path = NULL;
+
+        /* Fallback to old filename for compatibility */
+        sprintf_alloc(&trusted_path, "%s/%s", opkg_config->gpg_dir, "trusted.gpg");
+        if (!trusted_path) {
+            opkg_msg(ERROR, "Out of memory!\n");
+            goto out_err;
+        }
+
+        if (!file_exists(trusted_path)) {
+            opkg_msg(ERROR, "Could not find pubring.kbx or trusted.gpg under %s\n",
+                opkg_config->gpg_dir);
+            goto out_err;
+        }
     }
 
     err = gpgme_data_new_from_file(&key, trusted_path, 1);
